@@ -1,0 +1,12 @@
+{
+  "name": "fx-journal",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "npx serve public -s -l ${PORT:-3000}",
+    "dev": "npx serve public -s -l 3000"
+  },
+  "dependencies": {
+    "serve": "^14.2.1"
+  }
+}
