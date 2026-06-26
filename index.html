@@ -204,32 +204,6 @@ textarea{resize:vertical;min-height:70px}
 .bt-toggle input{width:auto}
 .ai-extract-row{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
 .ai-extract-status{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace}
-.insight-item{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border)}
-.insight-item:last-child{border-bottom:none}
-.insight-ic{font-size:16px;flex-shrink:0;margin-top:1px}
-.insight-txt{font-size:13px;color:var(--text2);line-height:1.5}
-.insight-txt b{color:var(--text)}
-.risk-bar-row{display:flex;align-items:center;gap:8px;margin-top:6px}
-.risk-bar{flex:1;height:5px;background:var(--bg4);border-radius:3px;overflow:hidden}
-.risk-bar-fill{height:100%;border-radius:3px;transition:width .3s}
-.risk-pct-lbl{font-size:11px;font-family:'JetBrains Mono',monospace;font-weight:700;min-width:48px;text-align:right}
-.warn-box{background:rgba(240,180,41,0.1);border:1px solid rgba(240,180,41,0.35);border-radius:var(--radius);padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--gold);display:none;line-height:1.6}
-.warn-box.show{display:block}
-.quick-toggle-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.qtoggle{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--text2)}
-.qtoggle input{width:auto}
-.outcome-badge{font-size:10px;font-weight:700;padding:3px 7px;border-radius:4px;text-transform:uppercase;letter-spacing:.4px;margin-left:6px}
-.outc-tp{background:rgba(0,229,160,0.15);color:var(--green)}
-.outc-sl{background:rgba(255,77,106,0.15);color:var(--red)}
-.outc-manual{background:rgba(124,109,250,0.15);color:var(--accent)}
-.outc-be{background:var(--bg4);color:var(--text3)}
-.rules-item{display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;margin-bottom:8px;font-size:13px}
-.rules-add-row{display:flex;gap:8px;margin-top:14px}
-.rules-add-row input{flex:1}
-.backup-banner{background:rgba(124,109,250,0.08);border:1px solid rgba(124,109,250,0.25);border-radius:var(--radius2);padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--text2);display:none}
-.backup-banner.show{display:flex}
-.strategy-chip{display:inline-block;background:var(--bg4);border:1px solid var(--border);color:var(--text2);font-size:11px;padding:4px 10px;border-radius:14px;margin:0 6px 6px 0;cursor:pointer;transition:.2s}
-.strategy-chip:hover{border-color:var(--accent);color:var(--accent)}
 </style>
 </head>
 <body>
@@ -268,7 +242,6 @@ textarea{resize:vertical;min-height:70px}
   <button class="nav-tab" onclick="showPage('backtests')">Backtests</button>
   <button class="nav-tab" onclick="showPage('calendar')">Calendar</button>
   <button class="nav-tab" onclick="showPage('coach')">AI Coach</button>
-  <button class="nav-tab" onclick="showPage('rules')">Rules</button>
   <div class="nav-right">
     <div class="user-badge"><div class="user-dot"></div><span id="userLabel">—</span></div>
     <div class="save-indicator"><div class="save-dot" id="saveDot"></div><span id="saveStatus">—</span></div>
@@ -316,14 +289,6 @@ textarea{resize:vertical;min-height:70px}
     <div class="dep-log" id="depLog"></div>
   </div>
 
-  <div class="backup-banner" id="backupBanner">
-    <span>📦 It's been a while since your last backup. <b style="color:var(--text)">Export your data</b> to keep an offline copy.</span>
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-sm" onclick="exportData();markBackedUp()">Export Now</button>
-      <button class="btn-ghost btn-sm" onclick="dismissBackupBanner()">Dismiss</button>
-    </div>
-  </div>
-
   <div class="filter-bar">
     <span class="filter-label">View</span>
     <button class="filter-btn active" id="fb-alltime" onclick="setFilter('alltime')">All Time</button>
@@ -342,10 +307,6 @@ textarea{resize:vertical;min-height:70px}
   <div class="grid-2">
     <div class="card"><div class="card-title" id="eqTitle">Equity Curve</div><div class="chart-wrap"><canvas id="eqChart"></canvas></div></div>
     <div class="card"><div class="card-title">P&amp;L by Pair</div><div class="chart-wrap"><canvas id="pairChart"></canvas></div></div>
-  </div>
-  <div class="card" style="margin-top:16px">
-    <div class="card-title">Insights <span style="font-size:10px;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(based on live trades)</span></div>
-    <div id="insightsList"></div>
   </div>
   <div class="card" style="margin-top:16px">
     <div class="sh-head">
@@ -437,36 +398,6 @@ textarea{resize:vertical;min-height:70px}
     </div>
   </div>
 </div>
-
-<!-- RULES -->
-<div class="page" id="page-rules">
-  <div class="grid-2">
-    <div class="card">
-      <div class="card-title">Your Trading Rules</div>
-      <p style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.6">Write the rules you want to hold yourself to. When you log a trade that breaks one, you'll get a soft nudge (not a block) before saving.</p>
-      <div id="rulesList"></div>
-      <div class="rules-add-row">
-        <input type="text" id="newRuleIn" placeholder="e.g. Never risk more than 2% per trade" onkeydown="if(event.key==='Enter')addRule()">
-        <button class="btn btn-sm" onclick="addRule()">Add</button>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">Risk Settings</div>
-      <div class="form-group" style="margin-bottom:14px">
-        <label>Max Risk Per Trade (%)</label>
-        <input type="number" id="maxRiskPct" placeholder="2" step="0.1" onchange="saveRiskSetting()">
-        <p style="font-size:11px;color:var(--text3);margin-top:6px;line-height:1.5">Used to flag trades that risk more than this % of your account capital. This is an approximation — see note below.</p>
-      </div>
-      <div class="form-group">
-        <label>Max Trades Per Day</label>
-        <input type="number" id="maxTradesDay" placeholder="3" step="1" onchange="saveRiskSetting()">
-      </div>
-      <div class="warn-box show" style="margin-top:16px">
-        ⚠ Risk % is approximated using a standard-lot pip-value estimate (assumes account currency ≈ quote currency). For pairs where your account currency differs significantly, treat this as a rough guide, not an exact figure.
-      </div>
-    </div>
-  </div>
-</div>
 </div><!-- end appScreen -->
 
 <!-- TRADE MODAL (used for both live trades and backtests) -->
@@ -480,31 +411,19 @@ textarea{resize:vertical;min-height:70px}
       <span class="ai-extract-status" id="extractStatus"></span>
     </div>
 
-    <div class="quick-toggle-row">
-      <label class="qtoggle"><input type="checkbox" id="quickLogToggle" onchange="toggleQuickLog()"> Quick log (just the essentials — add details later)</label>
-    </div>
-
-    <div class="warn-box" id="ruleWarnBox"></div>
-
     <div class="form-grid">
       <div class="form-group"><label>Pair</label><input type="text" id="f-pair" placeholder="EURUSD" oninput="this.value=this.value.toUpperCase()"></div>
       <div class="form-group"><label>Direction</label><select id="f-dir"><option value="BUY">BUY</option><option value="SELL">SELL</option></select></div>
-      <div class="form-group"><label>Entry Price</label><input type="number" id="f-entry" placeholder="1.08500" step="any" oninput="updateRiskPreview()"></div>
+      <div class="form-group"><label>Entry Price</label><input type="number" id="f-entry" placeholder="1.08500" step="any"></div>
       <div class="form-group"><label>Exit Price</label><input type="number" id="f-exit" placeholder="1.09000" step="any"></div>
-      <div class="form-group"><label>Lot Size</label><input type="number" id="f-lot" placeholder="0.10" step="any" oninput="updateRiskPreview()"></div>
+      <div class="form-group"><label>Lot Size</label><input type="number" id="f-lot" placeholder="0.10" step="any"></div>
       <div class="form-group"><label>P&amp;L ($)</label><input type="number" id="f-pnl" placeholder="50.00" step="any"></div>
-      <div class="form-group qlog-hide"><label>Stop Loss</label><input type="number" id="f-sl" placeholder="1.08000" step="any" oninput="updateRiskPreview()"></div>
-      <div class="form-group qlog-hide"><label>Take Profit</label><input type="number" id="f-tp" placeholder="1.10000" step="any"></div>
+      <div class="form-group"><label>Stop Loss</label><input type="number" id="f-sl" placeholder="1.08000" step="any"></div>
+      <div class="form-group"><label>Take Profit</label><input type="number" id="f-tp" placeholder="1.10000" step="any"></div>
       <div class="form-group"><label>Date</label><input type="date" id="f-date"></div>
-      <div class="form-group"><label>Time</label><input type="time" id="f-time" onchange="autoSession()"></div>
-      <div class="form-group qlog-hide"><label>Session</label><select id="f-session"><option>London</option><option>New York</option><option>Asian</option><option>Overlap</option></select></div>
-      <div class="form-group qlog-hide"><label>Outcome</label><select id="f-outcome"><option value="">— Not set —</option><option value="tp">Hit Take Profit</option><option value="sl">Hit Stop Loss</option><option value="manual">Closed Manually</option><option value="be">Breakeven</option></select></div>
-      <div class="form-group full qlog-hide"><label>Strategy / Setup</label><input type="text" id="f-strategy" placeholder="e.g. Break & Retest, Order Block, ICT SMC..." list="strategyOptions"><datalist id="strategyOptions"></datalist></div>
-      <div class="form-group full qlog-hide" id="riskPreviewWrap" style="display:none">
-        <label>Estimated Risk (approx.)</label>
-        <div class="risk-bar-row"><div class="risk-bar"><div class="risk-bar-fill" id="riskBarFill" style="width:0%;background:var(--green)"></div></div><span class="risk-pct-lbl" id="riskPctLbl">—</span></div>
-      </div>
-      <div class="form-group full qlog-hide"><label>Notes &amp; Psychology</label><textarea id="f-notes" placeholder="How did you feel? Did you follow your plan? FOMO? Revenge trade?"></textarea></div>
+      <div class="form-group"><label>Session</label><select id="f-session"><option>London</option><option>New York</option><option>Asian</option><option>Overlap</option></select></div>
+      <div class="form-group full"><label>Strategy / Setup</label><input type="text" id="f-strategy" placeholder="e.g. Break & Retest, Order Block, ICT SMC..."></div>
+      <div class="form-group full"><label>Notes &amp; Psychology</label><textarea id="f-notes" placeholder="How did you feel? Did you follow your plan? FOMO? Revenge trade?"></textarea></div>
       <div class="form-group full" id="chartPreviewWrap" style="display:none"><label>Chart Screenshot</label><img id="chartPreview" style="max-width:100%;border-radius:8px;border:1px solid var(--border)"></div>
     </div>
     <div class="modal-actions"><button class="btn btn-outline" onclick="closeTradeMod()">Cancel</button><button class="btn" onclick="saveTrade()">Save</button></div>
@@ -586,7 +505,7 @@ window._fb = { auth, db };
 //  STATE
 // ══════════════════════════════════════════════════════
 let currentUser = null; // firebase User object
-let state = { monthBalances:{}, bannerDismissedMonth:'', screenshots:[], rules:[], maxRiskPct:2, maxTradesDay:0, lastExportAt:null, backupDismissedAt:null };
+let state = { monthBalances:{}, bannerDismissedMonth:'', screenshots:[] };
 let trades = [];       // live trades, array of {id, ...fields}
 let backtests = [];    // backtest entries, same shape
 let calMonth = new Date().getMonth(), calYear = new Date().getFullYear();
@@ -710,11 +629,6 @@ async function loadAllData() {
     state.monthBalances = d.monthBalances || {};
     state.bannerDismissedMonth = d.bannerDismissedMonth || '';
     state.screenshots = d.screenshots || [];
-    state.rules = d.rules || [];
-    state.maxRiskPct = d.maxRiskPct !== undefined ? d.maxRiskPct : 2;
-    state.maxTradesDay = d.maxTradesDay || 0;
-    state.lastExportAt = d.lastExportAt || null;
-    state.backupDismissedAt = d.backupDismissedAt || null;
   }
   const [tSnap, bSnap] = await Promise.all([getDocs(collRef('trades')), getDocs(collRef('backtests'))]);
   trades = tSnap.docs.map(d=>({ id:d.id, ...d.data() }));
@@ -729,12 +643,7 @@ async function saveUserDoc() {
       email: currentUser.email,
       monthBalances: state.monthBalances,
       bannerDismissedMonth: state.bannerDismissedMonth,
-      screenshots: state.screenshots,
-      rules: state.rules,
-      maxRiskPct: state.maxRiskPct,
-      maxTradesDay: state.maxTradesDay,
-      lastExportAt: state.lastExportAt,
-      backupDismissedAt: state.backupDismissedAt
+      screenshots: state.screenshots
     }, { merge: true });
     setSaveStatus('saved');
     return true;
@@ -774,26 +683,6 @@ window.exportData = function() {
   URL.revokeObjectURL(url);
   showToast('Backup exported ✓', 'green');
 }
-window.markBackedUp = async function() {
-  state.lastExportAt = new Date().toISOString();
-  document.getElementById('backupBanner').classList.remove('show');
-  await saveUserDoc();
-}
-window.dismissBackupBanner = async function() {
-  state.backupDismissedAt = new Date().toISOString();
-  document.getElementById('backupBanner').classList.remove('show');
-  await saveUserDoc();
-}
-function checkBackupBanner() {
-  const b = document.getElementById('backupBanner');
-  const now = Date.now();
-  const last = state.lastExportAt ? new Date(state.lastExportAt).getTime() : 0;
-  const dismissed = state.backupDismissedAt ? new Date(state.backupDismissedAt).getTime() : 0;
-  const daysSince = (now - Math.max(last, 0)) / (1000*60*60*24);
-  const daysSinceDismiss = (now - Math.max(dismissed, 0)) / (1000*60*60*24);
-  const shouldShow = trades.length > 0 && daysSince > 7 && daysSinceDismiss > 3;
-  b.classList.toggle('show', shouldShow);
-}
 
 // ══════════════════════════════════════════════════════
 //  HELPERS
@@ -812,13 +701,12 @@ window.showPage = function(p) {
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));
   document.getElementById('page-'+p).classList.add('active');
-  const idx = {dashboard:0,trades:1,backtests:2,calendar:3,coach:4,rules:5};
+  const idx = {dashboard:0,trades:1,backtests:2,calendar:3,coach:4};
   document.querySelectorAll('.nav-tab')[idx[p]].classList.add('active');
   if(p==='dashboard') renderDashboard();
   if(p==='calendar') renderCalendar();
   if(p==='trades') renderTradesList();
   if(p==='backtests') renderBacktestsList();
-  if(p==='rules') renderRules();
 }
 
 // ══════════════════════════════════════════════════════
@@ -969,10 +857,8 @@ window.saveFund = async function() {
 // ══════════════════════════════════════════════════════
 function renderDashboard() {
   checkBanner();
-  checkBackupBanner();
   renderBalanceHero();
   renderDashboardStats();
-  renderInsights();
 }
 function avgRR(list) {
   const rrT = list.filter(t=>t.sl && t.tp && t.entry);
@@ -1045,22 +931,17 @@ window.openTradeMod = function(coll, id=null) {
   editColl = coll; editId = id; pendingChartUrl = null;
   document.getElementById('extractStatus').textContent = '';
   document.getElementById('chartPreviewWrap').style.display = 'none';
-  document.getElementById('ruleWarnBox').classList.remove('show');
-  populateStrategyOptions();
   const list = coll==='trades' ? trades : backtests;
   const titleWord = coll==='trades' ? 'Trade' : 'Backtest';
-  document.getElementById('quickLogToggle').checked = false;
-  applyQuickLogVisibility(false);
   if (id !== null) {
     const t = list.find(x=>x.id===id);
     if (!t) return;
-    ['pair','entry','exit','lot','pnl','sl','tp','date','time','strategy','notes'].forEach(f=>{
+    ['pair','entry','exit','lot','pnl','sl','tp','date','strategy','notes'].forEach(f=>{
       const el = document.getElementById('f-'+f);
-      if (el) el.value = t[f] !== undefined && t[f] !== null ? t[f] : '';
+      if (el) el.value = t[f] !== undefined ? t[f] : '';
     });
     document.getElementById('f-dir').value = t.dir || 'BUY';
     document.getElementById('f-session').value = t.session || 'London';
-    document.getElementById('f-outcome').value = t.outcome || '';
     document.getElementById('tradeModTitle').textContent = `✏️ Edit ${titleWord}`;
     if (t.chartUrl) {
       pendingChartUrl = t.chartUrl;
@@ -1070,116 +951,30 @@ window.openTradeMod = function(coll, id=null) {
   } else {
     document.getElementById('tradeModTitle').textContent = coll==='trades' ? '📈 Log New Trade' : '🧪 Log New Backtest';
     document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
-    document.getElementById('f-time').value = new Date().toTimeString().slice(0,5);
     ['pair','entry','exit','lot','pnl','sl','tp','strategy','notes'].forEach(f=>{
       const el = document.getElementById('f-'+f); if(el) el.value='';
     });
     document.getElementById('f-dir').value = 'BUY';
-    document.getElementById('f-outcome').value = '';
-    autoSession();
+    document.getElementById('f-session').value = 'London';
   }
-  updateRiskPreview();
   document.getElementById('tradeMod').classList.add('open');
 }
 window.closeTradeMod = function() { document.getElementById('tradeMod').classList.remove('open'); }
 
-window.toggleQuickLog = function() { applyQuickLogVisibility(document.getElementById('quickLogToggle').checked); }
-function applyQuickLogVisibility(on) {
-  document.querySelectorAll('.qlog-hide').forEach(el => el.style.display = on ? 'none' : '');
-}
-window.autoSession = function() {
-  const t = document.getElementById('f-time').value;
-  if (!t) return;
-  const h = parseInt(t.split(':')[0]);
-  let s = 'Asian';
-  if (h>=7 && h<12) s='London';
-  else if (h>=12 && h<16) s='Overlap';
-  else if (h>=16 && h<21) s='New York';
-  document.getElementById('f-session').value = s;
-}
-function populateStrategyOptions() {
-  const all = [...trades, ...backtests].map(t=>t.strategy).filter(Boolean);
-  const uniq = [...new Set(all)];
-  document.getElementById('strategyOptions').innerHTML = uniq.map(s=>`<option value="${escapeHtml(s)}">`).join('');
-}
-// Approximate risk %: standard lot = 100,000 units. Pip value ≈ $10/lot for non-JPY pairs (pip=0.0001),
-// ≈ $9.3/lot for JPY pairs (pip=0.01). This assumes account currency = USD and is a rough guide only —
-// exact pip value depends on the specific pair and account currency.
-function estimateRiskPct(entry, sl, lot, pair) {
-  if (!entry || !sl || !lot) return null;
-  const mk = tmk();
-  const mb = state.monthBalances[mk] || {};
-  const capital = (mb.start||0) + (mb.deposits||[]).reduce((s,d)=>s+d.amt,0);
-  if (capital <= 0) return null;
-  const isJpyPair = (pair||document.getElementById('f-pair').value||'').toUpperCase().includes('JPY');
-  const pipSize = isJpyPair ? 0.01 : 0.0001;
-  const pipValuePerLot = isJpyPair ? 9.3 : 10;
-  const riskPips = Math.abs(entry - sl) / pipSize;
-  const approxRiskUsd = riskPips * pipValuePerLot * lot;
-  return (approxRiskUsd / capital) * 100;
-}
-window.updateRiskPreview = function() {
-  const entry = parseFloat(document.getElementById('f-entry').value);
-  const sl = parseFloat(document.getElementById('f-sl').value);
-  const lot = parseFloat(document.getElementById('f-lot').value);
-  const wrap = document.getElementById('riskPreviewWrap');
-  const risk = estimateRiskPct(entry, sl, lot);
-  if (risk === null) { wrap.style.display = 'none'; return; }
-  wrap.style.display = 'block';
-  const pct = Math.min(risk, 100);
-  const fill = document.getElementById('riskBarFill');
-  fill.style.width = pct + '%';
-  fill.style.background = risk > (state.maxRiskPct||2) ? 'var(--red)' : risk > (state.maxRiskPct||2)*0.7 ? 'var(--gold)' : 'var(--green)';
-  document.getElementById('riskPctLbl').textContent = '~' + risk.toFixed(1) + '%';
-}
-
 window.saveTrade = async function() {
   const pair = document.getElementById('f-pair').value.trim().toUpperCase();
   if (!pair) { showToast('Please enter a currency pair', 'red'); return; }
-  const entry = parseFloat(document.getElementById('f-entry').value) || 0;
-  const exit = parseFloat(document.getElementById('f-exit').value) || 0;
-  const sl = parseFloat(document.getElementById('f-sl').value) || 0;
-  const tp = parseFloat(document.getElementById('f-tp').value) || 0;
-  const lot = parseFloat(document.getElementById('f-lot').value) || 0;
-  const dir = document.getElementById('f-dir').value;
-  const outcome = document.getElementById('f-outcome').value;
-  const date = document.getElementById('f-date').value;
-
-  // Soft rule checks — never block, just warn once per save attempt
-  const warnings = [];
-  if (editColl==='trades' && !skipWarnCheck) {
-    const risk = estimateRiskPct(entry, sl, lot);
-    if (risk !== null && state.maxRiskPct && risk > state.maxRiskPct) {
-      warnings.push(`This trade risks an estimated ${risk.toFixed(1)}% of your account — above your ${state.maxRiskPct}% max risk rule.`);
-    }
-    if (state.maxTradesDay && date) {
-      const sameDayCount = trades.filter(t=>t.date===date && t.id!==editId).length;
-      if (sameDayCount >= state.maxTradesDay) {
-        warnings.push(`You've already logged ${sameDayCount} trade(s) on ${date} — your rule caps it at ${state.maxTradesDay}/day.`);
-      }
-    }
-    if (outcome==='tp' && tp && exit && Math.abs(exit-tp) > Math.abs(tp-entry)*0.05 && Math.abs(exit-tp)>0.0005) {
-      warnings.push(`You marked this as "Hit Take Profit" but exit price doesn't closely match your TP — worth double-checking.`);
-    }
-    if (outcome==='sl' && sl && exit && Math.abs(exit-sl) > Math.abs(sl-entry)*0.05 && Math.abs(exit-sl)>0.0005) {
-      warnings.push(`You marked this as "Hit Stop Loss" but exit price doesn't closely match your SL — worth double-checking.`);
-    }
-    if (warnings.length) {
-      const box = document.getElementById('ruleWarnBox');
-      box.innerHTML = '⚠ ' + warnings.join('<br>⚠ ') + '<br><br><span style="text-decoration:underline;cursor:pointer" onclick="forceSaveTrade()">Save anyway</span>';
-      box.classList.add('show');
-      return;
-    }
-  }
-  skipWarnCheck = false;
-
   const t = {
-    pair, dir, entry, exit, lot,
+    pair,
+    dir: document.getElementById('f-dir').value,
+    entry: parseFloat(document.getElementById('f-entry').value) || 0,
+    exit: parseFloat(document.getElementById('f-exit').value) || 0,
+    lot: parseFloat(document.getElementById('f-lot').value) || 0,
     pnl: parseFloat(document.getElementById('f-pnl').value) || 0,
-    sl, tp, date,
-    time: document.getElementById('f-time').value || null,
+    sl: parseFloat(document.getElementById('f-sl').value) || 0,
+    tp: parseFloat(document.getElementById('f-tp').value) || 0,
+    date: document.getElementById('f-date').value,
     session: document.getElementById('f-session').value,
-    outcome: outcome || null,
     strategy: document.getElementById('f-strategy').value,
     notes: document.getElementById('f-notes').value,
     chartUrl: pendingChartUrl || null,
@@ -1197,16 +992,10 @@ window.saveTrade = async function() {
     }
     window.closeTradeMod();
     renderAll();
-    showToast('Saved ✓', 'green');
+    showToast(editId !== null ? 'Saved ✓' : 'Saved ✓', 'green');
   } catch(e) {
     showToast('Save failed: ' + e.message, 'red');
   }
-}
-let skipWarnCheck = false;
-window.forceSaveTrade = function() {
-  skipWarnCheck = true;
-  document.getElementById('ruleWarnBox').classList.remove('show');
-  window.saveTrade();
 }
 window.deleteTrade = async function(coll, id) {
   if (!confirm('Delete this entry?')) return;
@@ -1221,11 +1010,6 @@ window.deleteTrade = async function(coll, id) {
   }
 }
 
-function outcomeBadge(o) {
-  const map = {tp:['TP','outc-tp'], sl:['SL','outc-sl'], manual:['Manual','outc-manual'], be:['BE','outc-be']};
-  if (!o || !map[o]) return '';
-  return `<span class="outcome-badge ${map[o][1]}">${map[o][0]}</span>`;
-}
 function tradeRowHTML(t, coll, actions=true) {
   const pos = t.pnl >= 0;
   return `<div class="trade-row" onclick="openTradeMod('${coll}','${t.id}')">
@@ -1234,7 +1018,7 @@ function tradeRowHTML(t, coll, actions=true) {
     <div class="trade-meta">${t.date||'—'}</div>
     <div class="trade-meta">${t.lot||'—'} lot</div>
     <div class="trade-meta">${escapeHtml(t.session)||'—'}</div>
-    <div class="trade-meta">${escapeHtml(t.strategy)||'—'}${outcomeBadge(t.outcome)}</div>
+    <div class="trade-meta">${escapeHtml(t.strategy)||'—'}</div>
     <div class="${pos?'pnl-pos':'pnl-neg'}">${pos?'+':''}$${Number(t.pnl).toFixed(2)}</div>
     ${actions?`<button class="del-btn" onclick="event.stopPropagation();deleteTrade('${coll}','${t.id}')" title="Delete">✕</button>`:'<div></div>'}
   </div>`;
@@ -1479,101 +1263,6 @@ window.qp = function(p) { window.showPage('coach'); setTimeout(()=>window.sendCo
 // ══════════════════════════════════════════════════════
 //  RENDER ALL
 // ══════════════════════════════════════════════════════
-// ══════════════════════════════════════════════════════
-//  RULES PAGE
-// ══════════════════════════════════════════════════════
-function renderRules() {
-  document.getElementById('maxRiskPct').value = state.maxRiskPct || '';
-  document.getElementById('maxTradesDay').value = state.maxTradesDay || '';
-  const c = document.getElementById('rulesList');
-  c.innerHTML = state.rules.length ? state.rules.map((r,i)=>`
-    <div class="rules-item"><span>${escapeHtml(r)}</span><button class="del-btn" onclick="removeRule(${i})">✕</button></div>
-  `).join('') : `<div style="color:var(--text3);font-size:13px;padding:10px 0">No rules yet — add your first one below.</div>`;
-}
-window.addRule = async function() {
-  const inp = document.getElementById('newRuleIn');
-  const v = inp.value.trim();
-  if (!v) return;
-  state.rules.push(v);
-  inp.value = '';
-  renderRules();
-  await saveUserDoc();
-}
-window.removeRule = async function(i) {
-  state.rules.splice(i,1);
-  renderRules();
-  await saveUserDoc();
-}
-window.saveRiskSetting = async function() {
-  state.maxRiskPct = parseFloat(document.getElementById('maxRiskPct').value) || 0;
-  state.maxTradesDay = parseInt(document.getElementById('maxTradesDay').value) || 0;
-  await saveUserDoc();
-  showToast('Risk settings saved', 'green');
-}
-
-// ══════════════════════════════════════════════════════
-//  INSIGHTS ENGINE (pattern detection on live trades)
-// ══════════════════════════════════════════════════════
-function buildInsights() {
-  const items = [];
-  if (trades.length < 3) {
-    items.push({ic:'📊', txt:'Log a few more trades to unlock pattern insights.'});
-    return items;
-  }
-  const sorted = [...trades].filter(t=>t.date && t.time).sort((a,b)=>new Date(`${a.date}T${a.time}`)-new Date(`${b.date}T${b.time}`));
-  let revengeCount = 0;
-  for (let i=1;i<sorted.length;i++) {
-    const prev = sorted[i-1], cur = sorted[i];
-    if (prev.pnl < 0) {
-      const gapMin = (new Date(`${cur.date}T${cur.time}`) - new Date(`${prev.date}T${prev.time}`)) / 60000;
-      if (gapMin >= 0 && gapMin <= 30 && cur.lot > prev.lot) revengeCount++;
-    }
-  }
-  if (revengeCount > 0) {
-    items.push({ic:'🔥', txt:`<b>${revengeCount} possible revenge trade${revengeCount>1?'s':''}</b> detected — a larger position opened within 30 min of a loss.`});
-  }
-  const tagged = trades.filter(t=>t.strategy && t.strategy.trim());
-  const untagged = trades.filter(t=>!t.strategy || !t.strategy.trim());
-  if (tagged.length>=3 && untagged.length>=3) {
-    const wrT = Math.round(tagged.filter(t=>t.pnl>0).length/tagged.length*100);
-    const wrU = Math.round(untagged.filter(t=>t.pnl>0).length/untagged.length*100);
-    if (Math.abs(wrT-wrU) >= 10) {
-      items.push({ic: wrT>wrU?'✅':'⚠️', txt:`Trades with a <b>tagged strategy win ${wrT}%</b> of the time vs <b>${wrU}%</b> when untagged.`});
-    }
-  }
-  const bySession = {};
-  trades.forEach(t=>{ if(!t.session) return; bySession[t.session]=bySession[t.session]||{w:0,n:0}; bySession[t.session].n++; if(t.pnl>0)bySession[t.session].w++; });
-  const sessions = Object.entries(bySession).filter(([,v])=>v.n>=3).map(([k,v])=>({k,wr:v.w/v.n}));
-  if (sessions.length>=2) {
-    sessions.sort((a,b)=>b.wr-a.wr);
-    const best = sessions[0], worst = sessions[sessions.length-1];
-    if (best.wr - worst.wr >= 0.15) {
-      items.push({ic:'🕐', txt:`Your win rate is strongest during <b>${best.k}</b> (${Math.round(best.wr*100)}%) vs weakest in <b>${worst.k}</b> (${Math.round(worst.wr*100)}%).`});
-    }
-  }
-  const byDow = {};
-  const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  trades.forEach(t=>{ if(!t.date) return; const d=DOW[new Date(t.date).getDay()]; byDow[d]=byDow[d]||{w:0,n:0,pnl:0}; byDow[d].n++; byDow[d].pnl+=t.pnl; if(t.pnl>0)byDow[d].w++; });
-  const dows = Object.entries(byDow).filter(([,v])=>v.n>=3).map(([k,v])=>({k,pnl:v.pnl}));
-  if (dows.length>=2) {
-    dows.sort((a,b)=>a.pnl-b.pnl);
-    const worst = dows[0];
-    if (worst.pnl < 0) items.push({ic:'📉', txt:`<b>${worst.k}</b> is your worst day historically (${worst.pnl>=0?'+':''}$${worst.pnl.toFixed(2)} total).`});
-  }
-  const noOutcome = trades.filter(t=>!t.outcome).length;
-  if (noOutcome > trades.length*0.5 && trades.length>=5) {
-    items.push({ic:'📝', txt:`<b>${noOutcome} of ${trades.length} trades</b> have no recorded outcome (TP/SL/Manual) — tagging this helps spot patterns over time.`});
-  }
-  if (!items.length) items.push({ic:'👍', txt:'No major red flags detected yet — keep logging to build a clearer picture.'});
-  return items;
-}
-function renderInsights() {
-  const c = document.getElementById('insightsList');
-  if (!c) return;
-  const items = buildInsights();
-  c.innerHTML = items.map(i=>`<div class="insight-item"><div class="insight-ic">${i.ic}</div><div class="insight-txt">${i.txt}</div></div>`).join('');
-}
-
 function renderAll() {
   renderDashboard();
   renderTradesList();
