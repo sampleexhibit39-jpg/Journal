@@ -5,11 +5,10 @@ A personal forex trading + backtest journal, backed by Firebase (Auth + Firestor
 ## Project structure
 ```
 fx-journal/
-  public/
-    index.html     ← the entire app (HTML+CSS+JS)
-  package.json      ← lets Railway run a static server
-  vercel.json        ← tells Vercel to serve /public as a static site
+  index.html     ← the entire app (HTML+CSS+JS)
+  package.json    ← lets Railway run a static server
 ```
+No `vercel.json` needed — Vercel auto-serves a root-level `index.html` with zero config.
 
 ## Push to GitHub
 
