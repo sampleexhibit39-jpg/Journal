@@ -375,16 +375,51 @@ textarea{resize:vertical;min-height:70px}
   <div class="sh-head">
     <div>
       <div class="sh-title">Backtest Journal</div>
-      <div style="font-size:11px;color:var(--text3);margin-top:2px">Separate from live trades — does not affect your dashboard stats or win rate.</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:2px">Separate from live trades — does not affect your dashboard stats or win rate. Tracked in R-multiples (risk-adjusted), not dollars, so results compare across any account size.</div>
     </div>
     <button class="btn btn-bt" onclick="openTradeMod('backtests')">+ New Backtest</button>
   </div>
+
+  <div class="warn-box" id="btSampleWarn" style="margin-bottom:14px"></div>
+
   <div class="grid-4" style="margin-bottom:16px">
-    <div class="stat-card"><div class="stat-label">Backtest P&amp;L</div><div class="stat-val" id="bt-pnl">$0.00</div><div class="stat-sub" id="bt-pnl-s">0 entries</div></div>
     <div class="stat-card"><div class="stat-label">Win Rate</div><div class="stat-val" id="bt-wr">0%</div><div class="stat-sub" id="bt-wr-s">0W / 0L</div></div>
-    <div class="stat-card"><div class="stat-label">Avg R:R</div><div class="stat-val" id="bt-rr">0.00</div><div class="stat-sub">risk / reward</div></div>
-    <div class="stat-card"><div class="stat-label">Date Range</div><div class="stat-val" id="bt-range" style="font-size:14px">—</div><div class="stat-sub">earliest → latest</div></div>
+    <div class="stat-card"><div class="stat-label">Avg R / Trade</div><div class="stat-val" id="bt-avgr">0.00R</div><div class="stat-sub" id="bt-totalr">Total: 0.00R</div></div>
+    <div class="stat-card"><div class="stat-label">Max Drawdown</div><div class="stat-val" id="bt-dd">0.00R</div><div class="stat-sub" id="bt-streak">Longest losing streak: 0</div></div>
+    <div class="stat-card"><div class="stat-label">Date Range</div><div class="stat-val" id="bt-range" style="font-size:14px">—</div><div class="stat-sub" id="bt-pnl-s">0 entries</div></div>
   </div>
+
+  <div class="grid-2" style="margin-bottom:16px">
+    <div class="card">
+      <div class="card-title">Cumulative R (Equity Curve)</div>
+      <div class="chart-wrap"><canvas id="btEqChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="sh-head" style="margin-bottom:10px">
+        <div class="card-title" style="margin-bottom:0">Virtual Account Settings</div>
+      </div>
+      <p style="font-size:12px;color:var(--text3);margin-bottom:12px;line-height:1.6">Purely for context — doesn't affect R-multiple math, since R is risk-relative and doesn't need a balance.</p>
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Virtual Starting Balance ($)</label>
+        <input type="number" id="btVirtualBal" placeholder="10000" step="any" onchange="saveBtVirtualBalance()">
+      </div>
+      <div class="form-group">
+        <label>Assumed Risk Per Trade (%)</label>
+        <input type="number" id="btRiskAssumption" placeholder="1" step="0.1" onchange="saveBtVirtualBalance()">
+        <p style="font-size:11px;color:var(--text3);margin-top:6px">Used only to translate R into an illustrative $ figure below.</p>
+      </div>
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+        <div class="stat-label">Illustrative Balance</div>
+        <div class="stat-val" id="bt-illus-bal" style="font-size:18px">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title">Breakdown by Strategy</div>
+    <div id="btStrategyTable"></div>
+  </div>
+
   <div id="backtestsList"></div>
 </div>
 
@@ -489,11 +524,11 @@ textarea{resize:vertical;min-height:70px}
     <div class="form-grid">
       <div class="form-group"><label>Pair</label><input type="text" id="f-pair" placeholder="EURUSD" oninput="this.value=this.value.toUpperCase()"></div>
       <div class="form-group"><label>Direction</label><select id="f-dir"><option value="BUY">BUY</option><option value="SELL">SELL</option></select></div>
-      <div class="form-group"><label>Entry Price</label><input type="number" id="f-entry" placeholder="1.08500" step="any" oninput="updateRiskPreview()"></div>
-      <div class="form-group"><label>Exit Price</label><input type="number" id="f-exit" placeholder="1.09000" step="any"></div>
+      <div class="form-group"><label>Entry Price</label><input type="number" id="f-entry" placeholder="1.08500" step="any" oninput="updateRiskPreview();updateRMultiplePreview()"></div>
+      <div class="form-group"><label>Exit Price</label><input type="number" id="f-exit" placeholder="1.09000" step="any" oninput="updateRMultiplePreview()"></div>
       <div class="form-group"><label>Lot Size</label><input type="number" id="f-lot" placeholder="0.10" step="any" oninput="updateRiskPreview()"></div>
       <div class="form-group"><label>P&amp;L ($)</label><input type="number" id="f-pnl" placeholder="50.00" step="any"></div>
-      <div class="form-group qlog-hide"><label>Stop Loss</label><input type="number" id="f-sl" placeholder="1.08000" step="any" oninput="updateRiskPreview()"></div>
+      <div class="form-group qlog-hide"><label>Stop Loss</label><input type="number" id="f-sl" placeholder="1.08000" step="any" oninput="updateRiskPreview();updateRMultiplePreview()"></div>
       <div class="form-group qlog-hide"><label>Take Profit</label><input type="number" id="f-tp" placeholder="1.10000" step="any"></div>
       <div class="form-group"><label>Date</label><input type="date" id="f-date"></div>
       <div class="form-group"><label>Time</label><input type="time" id="f-time" onchange="autoSession()"></div>
@@ -503,6 +538,11 @@ textarea{resize:vertical;min-height:70px}
       <div class="form-group full qlog-hide" id="riskPreviewWrap" style="display:none">
         <label>Estimated Risk (approx.)</label>
         <div class="risk-bar-row"><div class="risk-bar"><div class="risk-bar-fill" id="riskBarFill" style="width:0%;background:var(--green)"></div></div><span class="risk-pct-lbl" id="riskPctLbl">—</span></div>
+      </div>
+      <div class="form-group full qlog-hide" id="rMultiplePreviewWrap" style="display:none">
+        <label>Risk:Reward Outcome (R-multiple)</label>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:800" id="rMultipleVal">—</div>
+        <p style="font-size:11px;color:var(--text3);margin-top:4px">Calculated automatically from entry, SL, and exit. Doesn't need lot size.</p>
       </div>
       <div class="form-group full qlog-hide"><label>Notes &amp; Psychology</label><textarea id="f-notes" placeholder="How did you feel? Did you follow your plan? FOMO? Revenge trade?"></textarea></div>
       <div class="form-group full" id="chartPreviewWrap" style="display:none"><label>Chart Screenshot</label><img id="chartPreview" style="max-width:100%;border-radius:8px;border:1px solid var(--border)"></div>
@@ -586,7 +626,7 @@ window._fb = { auth, db };
 //  STATE
 // ══════════════════════════════════════════════════════
 let currentUser = null; // firebase User object
-let state = { monthBalances:{}, bannerDismissedMonth:'', screenshots:[], rules:[], maxRiskPct:2, maxTradesDay:0, lastExportAt:null, backupDismissedAt:null };
+let state = { monthBalances:{}, bannerDismissedMonth:'', screenshots:[], rules:[], maxRiskPct:2, maxTradesDay:0, lastExportAt:null, backupDismissedAt:null, btVirtualBalance:10000, btRiskAssumption:1 };
 let trades = [];       // live trades, array of {id, ...fields}
 let backtests = [];    // backtest entries, same shape
 let calMonth = new Date().getMonth(), calYear = new Date().getFullYear();
@@ -715,6 +755,8 @@ async function loadAllData() {
     state.maxTradesDay = d.maxTradesDay || 0;
     state.lastExportAt = d.lastExportAt || null;
     state.backupDismissedAt = d.backupDismissedAt || null;
+    state.btVirtualBalance = d.btVirtualBalance !== undefined ? d.btVirtualBalance : 10000;
+    state.btRiskAssumption = d.btRiskAssumption !== undefined ? d.btRiskAssumption : 1;
   }
   const [tSnap, bSnap] = await Promise.all([getDocs(collRef('trades')), getDocs(collRef('backtests'))]);
   trades = tSnap.docs.map(d=>({ id:d.id, ...d.data() }));
@@ -734,7 +776,9 @@ async function saveUserDoc() {
       maxRiskPct: state.maxRiskPct,
       maxTradesDay: state.maxTradesDay,
       lastExportAt: state.lastExportAt,
-      backupDismissedAt: state.backupDismissedAt
+      backupDismissedAt: state.backupDismissedAt,
+      btVirtualBalance: state.btVirtualBalance,
+      btRiskAssumption: state.btRiskAssumption
     }, { merge: true });
     setSaveStatus('saved');
     return true;
@@ -1051,6 +1095,8 @@ window.openTradeMod = function(coll, id=null) {
   const titleWord = coll==='trades' ? 'Trade' : 'Backtest';
   document.getElementById('quickLogToggle').checked = false;
   applyQuickLogVisibility(false);
+  document.getElementById('riskPreviewWrap').style.display = coll==='trades' ? '' : 'none';
+  document.getElementById('rMultiplePreviewWrap').style.display = coll==='backtests' ? '' : 'none';
   if (id !== null) {
     const t = list.find(x=>x.id===id);
     if (!t) return;
@@ -1079,6 +1125,7 @@ window.openTradeMod = function(coll, id=null) {
     autoSession();
   }
   updateRiskPreview();
+  updateRMultiplePreview();
   document.getElementById('tradeMod').classList.add('open');
 }
 window.closeTradeMod = function() { document.getElementById('tradeMod').classList.remove('open'); }
@@ -1133,6 +1180,28 @@ window.updateRiskPreview = function() {
   document.getElementById('riskPctLbl').textContent = '~' + risk.toFixed(1) + '%';
 }
 
+// R-multiple: how many "risk units" this trade returned. Direction-aware, doesn't need lot size.
+function computeRMultiple(dir, entry, sl, exit) {
+  if (!entry || !sl || !exit) return null;
+  const dirSign = dir === 'SELL' ? -1 : 1;
+  const risk = (entry - sl) * dirSign;
+  const reward = (exit - entry) * dirSign;
+  if (risk <= 0) return null; // SL on wrong side of entry for the given direction
+  return reward / risk;
+}
+window.updateRMultiplePreview = function() {
+  const dir = document.getElementById('f-dir').value;
+  const entry = parseFloat(document.getElementById('f-entry').value);
+  const sl = parseFloat(document.getElementById('f-sl').value);
+  const exit = parseFloat(document.getElementById('f-exit').value);
+  const r = computeRMultiple(dir, entry, sl, exit);
+  const el = document.getElementById('rMultipleVal');
+  if (!el) return;
+  if (r === null) { el.textContent = '—'; el.style.color = 'var(--text)'; return; }
+  el.textContent = (r>=0?'+':'') + r.toFixed(2) + 'R';
+  el.style.color = r >= 0 ? 'var(--green)' : 'var(--red)';
+}
+
 window.saveTrade = async function() {
   const pair = document.getElementById('f-pair').value.trim().toUpperCase();
   if (!pair) { showToast('Please enter a currency pair', 'red'); return; }
@@ -1183,6 +1252,7 @@ window.saveTrade = async function() {
     strategy: document.getElementById('f-strategy').value,
     notes: document.getElementById('f-notes').value,
     chartUrl: pendingChartUrl || null,
+    r: editColl === 'backtests' ? computeRMultiple(dir, entry, sl, exit) : null,
   };
   try {
     if (editId !== null) {
@@ -1247,26 +1317,133 @@ function renderTradesList() {
   }
   c.innerHTML = [...trades].reverse().map(t=>tradeRowHTML(t,'trades')).join('');
 }
+let btEqChart = null;
 function renderBacktestsList() {
   const c = document.getElementById('backtestsList');
-  const pnl = backtests.reduce((s,t)=>s+t.pnl, 0);
-  const wins = backtests.filter(t=>t.pnl>0), losses = backtests.filter(t=>t.pnl<0);
-  const wr = backtests.length ? Math.round(wins.length/backtests.length*100) : 0;
-  document.getElementById('bt-pnl').textContent = `${pnl>=0?'+':''}$${Math.abs(pnl).toFixed(2)}`;
-  document.getElementById('bt-pnl').className = `stat-val ${pnl>=0?'up':'dn'}`;
-  document.getElementById('bt-pnl-s').textContent = `${backtests.length} entr${backtests.length===1?'y':'ies'}`;
+  document.getElementById('btVirtualBal').value = state.btVirtualBalance;
+  document.getElementById('btRiskAssumption').value = state.btRiskAssumption;
+
+  const withR = backtests.filter(t => t.r !== null && t.r !== undefined);
+  const wins = withR.filter(t=>t.r>0), losses = withR.filter(t=>t.r<0);
+  const wr = withR.length ? Math.round(wins.length/withR.length*100) : 0;
+  const totalR = withR.reduce((s,t)=>s+t.r, 0);
+  const avgR = withR.length ? totalR/withR.length : 0;
+
   document.getElementById('bt-wr').textContent = `${wr}%`;
   document.getElementById('bt-wr').className = `stat-val ${wr>=50?'up':'dn'}`;
   document.getElementById('bt-wr-s').textContent = `${wins.length}W / ${losses.length}L`;
-  document.getElementById('bt-rr').textContent = avgRR(backtests).toFixed(2);
+  document.getElementById('bt-avgr').textContent = `${avgR>=0?'+':''}${avgR.toFixed(2)}R`;
+  document.getElementById('bt-avgr').className = `stat-val ${avgR>=0?'up':'dn'}`;
+  document.getElementById('bt-totalr').textContent = `Total: ${totalR>=0?'+':''}${totalR.toFixed(2)}R`;
+  document.getElementById('bt-pnl-s').textContent = `${backtests.length} entr${backtests.length===1?'y':'ies'}`;
   const dates = backtests.map(t=>t.date).filter(Boolean).sort();
   document.getElementById('bt-range').textContent = dates.length ? `${dates[0]} → ${dates[dates.length-1]}` : '—';
+
+  // Drawdown + longest losing streak, computed over chronological sequence
+  const chrono = [...withR].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  let cum = 0, peak = 0, maxDD = 0, streak = 0, maxStreak = 0;
+  const cumSeries = [0];
+  chrono.forEach(t => {
+    cum += t.r;
+    cumSeries.push(cum);
+    if (cum > peak) peak = cum;
+    const dd = peak - cum;
+    if (dd > maxDD) maxDD = dd;
+    if (t.r < 0) { streak++; if (streak > maxStreak) maxStreak = streak; } else streak = 0;
+  });
+  document.getElementById('bt-dd').textContent = `-${maxDD.toFixed(2)}R`;
+  document.getElementById('bt-dd').className = `stat-val ${maxDD>3?'dn':''}`;
+  document.getElementById('bt-streak').textContent = `Longest losing streak: ${maxStreak}`;
+
+  // Illustrative $ balance from R + virtual balance + assumed risk%
+  const vb = state.btVirtualBalance || 10000;
+  const riskAssump = (state.btRiskAssumption || 1) / 100;
+  let runningBal = vb;
+  chrono.forEach(t => { runningBal += runningBal * riskAssump * t.r; });
+  document.getElementById('bt-illus-bal').textContent = `$${runningBal.toFixed(2)}`;
+  document.getElementById('bt-illus-bal').style.color = runningBal >= vb ? 'var(--green)' : 'var(--red)';
+
+  // Sample-size warning
+  const warn = document.getElementById('btSampleWarn');
+  if (withR.length > 0 && withR.length < 30) {
+    warn.innerHTML = `⚠ Stats based on only <b>${withR.length}</b> backtest${withR.length!==1?'s':''} — win rate and avg R are not statistically reliable until you have a larger sample (30+ is a common rule of thumb). Treat these numbers as early signal, not proof.`;
+    warn.classList.add('show');
+  } else {
+    warn.classList.remove('show');
+  }
+
+  buildBtEquityChart(cumSeries);
+  buildStrategyTable();
+
   if (!backtests.length) {
     c.innerHTML = `<div class="empty-state"><div class="ei">🧪</div><p>No backtests yet. Click "+ New Backtest" to log your first historical setup — dates can go as far back as you need.</p></div>`;
     return;
   }
-  c.innerHTML = [...backtests].sort((a,b)=>new Date(a.date)-new Date(b.date)).reverse().map(t=>tradeRowHTML(t,'backtests')).join('');
+  c.innerHTML = [...backtests].sort((a,b)=>new Date(a.date)-new Date(b.date)).reverse().map(t=>backtestRowHTML(t)).join('');
 }
+function backtestRowHTML(t) {
+  const hasR = t.r !== null && t.r !== undefined;
+  const pos = hasR ? t.r >= 0 : t.pnl >= 0;
+  return `<div class="trade-row" onclick="openTradeMod('backtests','${t.id}')">
+    <div class="trade-pair">${escapeHtml(t.pair)}</div>
+    <div><span class="tag ${t.dir==='BUY'?'tag-buy':'tag-sell'}">${t.dir}</span></div>
+    <div class="trade-meta">${t.date||'—'}</div>
+    <div class="trade-meta">${escapeHtml(t.session)||'—'}</div>
+    <div class="trade-meta">${escapeHtml(t.strategy)||'—'}${outcomeBadge(t.outcome)}</div>
+    <div class="trade-meta">—</div>
+    <div class="${pos?'pnl-pos':'pnl-neg'}">${hasR ? `${t.r>=0?'+':''}${t.r.toFixed(2)}R` : 'N/A'}</div>
+    <button class="del-btn" onclick="event.stopPropagation();deleteTrade('backtests','${t.id}')" title="Delete">✕</button>
+  </div>`;
+}
+function buildBtEquityChart(cumSeries) {
+  const ctx = document.getElementById('btEqChart');
+  if (!ctx) return;
+  if (btEqChart) btEqChart.destroy();
+  const labels = cumSeries.map((_,i)=>i===0?'Start':`#${i}`);
+  btEqChart = new Chart(ctx.getContext('2d'), {type:'line', data:{labels, datasets:[{label:'Cumulative R', data:cumSeries.map(v=>parseFloat(v.toFixed(2))), borderColor:'#3ab0ff', backgroundColor:'rgba(58,176,255,0.08)', fill:true, tension:0.3, pointRadius:2, borderWidth:2}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{display:false}, y:{grid:{color:'rgba(42,48,64,0.8)'}, ticks:{color:'#5a6478', font:{size:10}, callback:v=>v+'R'}}}}});
+}
+function buildStrategyTable() {
+  const el = document.getElementById('btStrategyTable');
+  if (!el) return;
+  const withR = backtests.filter(t => t.r !== null && t.r !== undefined && t.strategy && t.strategy.trim());
+  const byStrat = {};
+  withR.forEach(t => {
+    const k = t.strategy.trim();
+    byStrat[k] = byStrat[k] || {n:0, w:0, totalR:0};
+    byStrat[k].n++;
+    byStrat[k].totalR += t.r;
+    if (t.r > 0) byStrat[k].w++;
+  });
+  const rows = Object.entries(byStrat).map(([k,v]) => ({k, n:v.n, wr: Math.round(v.w/v.n*100), avgR: v.totalR/v.n, totalR: v.totalR}));
+  rows.sort((a,b)=>b.avgR-a.avgR);
+  if (!rows.length) {
+    el.innerHTML = `<div style="color:var(--text3);font-size:13px;padding:10px 0">Tag backtests with a strategy name to see this breakdown.</div>`;
+    return;
+  }
+  el.innerHTML = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead><tr style="text-align:left;color:var(--text3);font-size:11px;text-transform:uppercase;letter-spacing:.5px">
+      <th style="padding:8px 10px;border-bottom:1px solid var(--border)">Strategy</th>
+      <th style="padding:8px 10px;border-bottom:1px solid var(--border)">Sample</th>
+      <th style="padding:8px 10px;border-bottom:1px solid var(--border)">Win Rate</th>
+      <th style="padding:8px 10px;border-bottom:1px solid var(--border)">Avg R</th>
+      <th style="padding:8px 10px;border-bottom:1px solid var(--border)">Total R</th>
+    </tr></thead>
+    <tbody>${rows.map(r=>`<tr>
+      <td style="padding:8px 10px;border-bottom:1px solid var(--border);font-weight:700">${escapeHtml(r.k)}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid var(--border);color:${r.n<30?'var(--gold)':'var(--text2)'}">${r.n}${r.n<30?' ⚠':''}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${r.wr}%</td>
+      <td style="padding:8px 10px;border-bottom:1px solid var(--border);color:${r.avgR>=0?'var(--green)':'var(--red)'};font-family:'JetBrains Mono',monospace">${r.avgR>=0?'+':''}${r.avgR.toFixed(2)}R</td>
+      <td style="padding:8px 10px;border-bottom:1px solid var(--border);color:${r.totalR>=0?'var(--green)':'var(--red)'};font-family:'JetBrains Mono',monospace">${r.totalR>=0?'+':''}${r.totalR.toFixed(2)}R</td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+window.saveBtVirtualBalance = async function() {
+  state.btVirtualBalance = parseFloat(document.getElementById('btVirtualBal').value) || 10000;
+  state.btRiskAssumption = parseFloat(document.getElementById('btRiskAssumption').value) || 1;
+  renderBacktestsList();
+  await saveUserDoc();
+}
+
 
 // ══════════════════════════════════════════════════════
 //  CALENDAR (live trades only)
